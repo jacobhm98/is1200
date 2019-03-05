@@ -1,0 +1,1 @@
+A simple tictactoe game to be played on the ChipKit 32bit microprocessor. Using given lab files from course is1200 as base. Game is created by Jacob, with work concentrated in files tictactoe.c, mipslabmain.c, menu.c, mipslab.h, and mipslabwork.c.
