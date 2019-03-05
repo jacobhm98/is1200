@@ -1,0 +1,73 @@
+/* mipslabwork.c
+
+   This file written 2015 by F Lundevall
+   Updated 2017-04-21 by F Lundevall
+
+   This file should be changed by YOU! So you must
+   add comment(s) here with your name(s) and date(s):
+
+   This file modified 2017-04-31 by Ture Teknolog 
+
+   For copyright and licensing, see file COPYING */
+
+#include <stdint.h>   /* Declarations of uint_32 and the like */
+#include <pic32mx.h>  /* Declarations of system-specific addresses etc */
+#include "mipslab.h"  /* Declatations for these labs */
+
+int mytime = 0x5957;
+volatile int* portE = (volatile int*) 0xbf886110; //initializing pointer for lights
+int prime = 1234567;
+
+
+char textstring[] = "text, more text, and even more text!";
+int timeoutcount = 0;
+
+/* Interrupt Service Routine */
+void user_isr( void )
+{
+  if(((IFS(0) & 0x0100) >> 8) == 1){
+  timeoutcount++;
+  if (timeoutcount == 10){
+    timeoutcount = 0;
+  time2string(textstring, mytime);
+  display_string(3, textstring);
+  display_update();
+  tick(&mytime);
+}
+IFSCLR(0) = 0x0100;
+}
+if(((IFS(0) & 0x800) >> 11) == 1){
+	mytime += 3;
+	IFSCLR(0) = 0x800;
+}
+}
+
+/* Lab-specific initialization goes here */
+void labinit( void )
+{
+  volatile int* trisE = (volatile int*) 0xbf886100;  //initializing pointer to control register for light GPIO pin
+  *trisE &= ~0xff;    //setting lights as output
+  *portE = 0;       //setting value of lights to 0
+  TRISD |= 0xfe0;     //setting port d bit 11-5 as input
+
+  T2CON = 0;	//clear timer 2 configurations
+  TMR2 = 0;		//set timer value to 0 before start
+  PR2 = 0x7a12; //set timer period to 31250
+  T2CONSET = 0x8070; //bit 15 turns timer on, bits 4-6 set prescale to 256. 80mhz/256 = 312500. 31250(timer period)/312500 = 0.1, which means timer times out 10 times a second
+  IECSET(0) = 0x100;  //enable interrupt flag for timer 2
+  IPCSET(2) = 0xc;    //set priority of interrupt to 011
+  IECSET(0) = 0x800;	//enable interrupt for int2, bit 11
+  IPCSET(2) = 0x1C000000; //set priority of switch 2 to 111
+  enable_interrupt(); //call labwork.s to enable interrupts globally
+  return;
+}
+
+/* This function is called repetitively from the main program */
+void labwork( void )
+{
+  prime = nextprime(prime);
+  display_string(0, itoaconv(prime));
+  display_update();
+  
+}
+
